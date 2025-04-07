@@ -14,6 +14,8 @@ func main() {
 		Handler: mux,
 	}
 
+	mux.Handle("/", http.FileServer(http.Dir(".")))
+
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Printf("Server error: %v\n", err)
