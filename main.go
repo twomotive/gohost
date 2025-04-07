@@ -28,10 +28,10 @@ func main() {
 	mux.HandleFunc("GET /api/healthz", HandleReadiness)
 
 	// Add metrics endpoint
-	mux.HandleFunc("GET /api/metrics", apiCfg.handleMetrics)
+	mux.HandleFunc("GET /admin/metrics", apiCfg.handleMetrics)
 
 	// // Add reset endpoint
-	mux.HandleFunc("POST /api/reset", apiCfg.handleReset)
+	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
 
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
