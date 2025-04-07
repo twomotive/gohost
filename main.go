@@ -19,40 +19,22 @@ func main() {
 		Handler: mux,
 	}
 
-	// Add health check endpoint
-	mux.HandleFunc("GET /api/healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
-
-	// Add metrics endpoint
-	mux.HandleFunc("GET /api/metrics", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		fmt.Fprintf(w, "Hits: %d", apiCfg.fileServerHits.Load())
-	})
-
-	mux.HandleFunc("POST /api/reset", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-		apiCfg.fileServerHits.Swap(0)
-		fmt.Fprintf(w, "Hits has been reset to %d", apiCfg.fileServerHits.Load())
-
-	})
-
 	// Update fileserver paths with metrics middleware
 	fileServer := http.FileServer(http.Dir("."))
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app/", fileServer)))
 	mux.Handle("/assets/", apiCfg.middlewareMetricsInc(http.FileServer(http.Dir("assets"))))
 
+	// Add health check endpoint
+	mux.HandleFunc("GET /api/healthz", HandleReadiness)
+
+	// Add metrics endpoint
+	mux.HandleFunc("GET /api/metrics", apiCfg.handleMetrics)
+
+	// // Add reset endpoint
+	mux.HandleFunc("POST /api/reset", apiCfg.handleReset)
+
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Printf("Server error: %v\n", err)
 	}
-}
-
-func (c *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		c.fileServerHits.Add(1)
-		next.ServeHTTP(w, r)
-	})
 }
