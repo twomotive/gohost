@@ -33,6 +33,9 @@ func main() {
 	// // Add reset endpoint
 	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
 
+	// // Add validate endpoint
+	mux.HandleFunc("POST /api/validate_lenght", handleValidate)
+
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Printf("Server error: %v\n", err)
