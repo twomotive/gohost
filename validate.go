@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 )
 
 func handleValidate(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,8 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	type returnVal struct {
-		Valid bool `json:"valid"`
+		Valid        bool   `json:"valid"`
+		Cleaned_body string `json:"cleaned_body"`
 	}
 
 	type returnErr struct {
@@ -33,8 +35,16 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 
 	if len(isValid.Body) <= 140 {
 
+		text, err := removeBadWords(isValid.Body)
+		if err != nil {
+			log.Printf("Error removing words from JSON: %s", err)
+			w.WriteHeader(500)
+			return
+		}
+
 		returnVal := returnVal{
-			Valid: true,
+			Valid:        true,
+			Cleaned_body: text,
 		}
 
 		data, err := json.Marshal(returnVal)
@@ -64,4 +74,31 @@ func handleValidate(w http.ResponseWriter, r *http.Request) {
 		w.Write(data)
 	}
 
+}
+
+func removeBadWords(s string) (string, error) {
+	badWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+
+	words := strings.Fields(s)
+
+	var result strings.Builder
+
+	for i, word := range words {
+		if i > 0 {
+			result.WriteString(" ")
+		}
+
+		wordLower := strings.ToLower(word)
+		if _, exists := badWords[wordLower]; exists {
+			result.WriteString("****")
+		} else {
+			result.WriteString(word)
+		}
+	}
+
+	return result.String(), nil
 }
