@@ -55,11 +55,14 @@ func main() {
 	// Add metrics endpoint
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handleMetrics)
 
-	// // Add reset endpoint
+	// Add reset endpoint
 	mux.HandleFunc("POST /admin/reset", apiCfg.handleReset)
 
-	// // Add validate endpoint
+	// Add validate endpoint
 	mux.HandleFunc("POST /api/validate", handleValidate)
+
+	// Add users api endpoint to create users
+	mux.HandleFunc("POST /api/users", apiCfg.handleUsers)
 
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
