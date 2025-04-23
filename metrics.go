@@ -9,8 +9,8 @@ func (cfg *apiConfig) handleMetrics(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	htmlContent := `<html>
   <body>
-    <h1>Welcome, Chirpy Admin</h1>
-    <p>Chirpy has been visited %d times!</p>
+    <h1>Welcome, Gohost Admin</h1>
+    <p>Gohost has been visited %d times!</p>
   </body>
 </html>`
 	fmt.Fprintf(w, htmlContent, cfg.fileServerHits.Load())

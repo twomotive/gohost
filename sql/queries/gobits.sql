@@ -13,3 +13,8 @@ RETURNING *;
 -- name: GetAllGobits :many
 SELECT * FROM gobits
 ORDER BY created_at ASC;
+
+
+
+-- name: GetGobit :one
+SELECT * FROM gobits WHERE id = $1;

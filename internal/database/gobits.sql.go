@@ -74,3 +74,20 @@ func (q *Queries) GetAllGobits(ctx context.Context) ([]Gobit, error) {
 	}
 	return items, nil
 }
+
+const getGobit = `-- name: GetGobit :one
+SELECT id, created_at, updated_at, body, user_id FROM gobits WHERE id = $1
+`
+
+func (q *Queries) GetGobit(ctx context.Context, id uuid.UUID) (Gobit, error) {
+	row := q.db.QueryRowContext(ctx, getGobit, id)
+	var i Gobit
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Body,
+		&i.UserID,
+	)
+	return i, err
+}

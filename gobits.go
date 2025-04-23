@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -79,5 +80,92 @@ func (cfg *apiConfig) createGoBits(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated) // 201 for gobit creation
+	w.Write(data)
+}
+
+func (cfg *apiConfig) getAllGoBits(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	gobits, err := cfg.db.GetAllGobits(r.Context())
+	if err != nil {
+		log.Printf("cannot get gobits: %v", err)
+		http.Error(w, "Failed to get gobits", http.StatusInternalServerError)
+		return
+	}
+
+	responseGobits := make([]createdGobit, len(gobits))
+	for i, dbGobit := range gobits {
+		responseGobits[i] = createdGobit{
+			ID:        dbGobit.ID,
+			CreatedAt: dbGobit.CreatedAt,
+			UpdatedAt: dbGobit.UpdatedAt,
+			Body:      dbGobit.Body,
+			UserID:    dbGobit.UserID,
+		}
+	}
+
+	data, err := json.Marshal(responseGobits)
+	if err != nil {
+		log.Printf("Error marshalling gobits response: %v", err)
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK) // 200 OK for successful retrieval
+	w.Write(data)
+
+}
+
+func (cfg *apiConfig) getGoBitByID(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// Extract gobitID from the URL path parameter
+	gobitIDStr := r.PathValue("gobitID")
+	if gobitIDStr == "" {
+		http.Error(w, "gobit ID is required", http.StatusBadRequest)
+		return
+	}
+
+	gobitID, err := uuid.Parse(gobitIDStr)
+	if err != nil {
+		http.Error(w, "Invalid gobit ID format", http.StatusBadRequest)
+		return
+	}
+
+	dbGobit, err := cfg.db.GetGobit(r.Context(), gobitID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "gobit not found", http.StatusNotFound)
+		} else {
+			log.Printf("Error getting gobit by ID %s: %v", gobitID, err)
+			http.Error(w, "Failed to get gobit", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	responseGobit := createdGobit{
+		ID:        dbGobit.ID,
+		CreatedAt: dbGobit.CreatedAt,
+		UpdatedAt: dbGobit.UpdatedAt,
+		Body:      dbGobit.Body,
+		UserID:    dbGobit.UserID,
+	}
+
+	data, err := json.Marshal(responseGobit)
+	if err != nil {
+		log.Printf("Error marshalling single gobit response: %v", err)
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
