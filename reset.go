@@ -10,7 +10,7 @@ func (cfg *apiConfig) handleReset(w http.ResponseWriter, r *http.Request) {
 	cfg.fileServerHits.Store(0)
 
 	if os.Getenv("PLATFORM") != "dev" {
-		http.Error(w, "not in development mode!!", http.StatusForbidden)
+		http.Error(w, "Operation not allowed outside development mode", http.StatusForbidden)
 		return
 	}
 

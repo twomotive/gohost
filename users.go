@@ -47,7 +47,7 @@ func (cfg *apiConfig) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 	user, err := cfg.db.CreateUser(r.Context(), req.Email)
 	if err != nil {
-		log.Printf("cannot create user !!: %v", err)
+		log.Printf("cannot create user: %v", err)
 		http.Error(w, "Failed to create user", http.StatusInternalServerError)
 		return
 	}
@@ -66,7 +66,7 @@ func (cfg *apiConfig) handleUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated) // 201 for resource creation
+	w.WriteHeader(http.StatusCreated) // 201 for user creation
 	w.Write(data)
 
 }
