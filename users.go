@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/twomotive/gohost/internal/auth"
+	"github.com/twomotive/gohost/internal/database"
 )
 
-type emailRequest struct {
-	Email string `json:"email"`
+type userRequest struct {
+	Email          string `json:"email"`
+	HashedPassword string `json:"hashed_password"`
 }
 
 type createdUser struct {
@@ -32,11 +35,11 @@ func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req emailRequest
+	var req userRequest
 	err := json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
-		log.Printf("JSON email decode error: %v", err)
-		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
+		log.Printf("JSON user decode error: %v", err)
+		http.Error(w, "Invalid request body: expected JSON format", http.StatusBadRequest)
 		return
 	}
 
@@ -45,10 +48,22 @@ func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := cfg.db.CreateUser(r.Context(), req.Email)
+	hashedPassword, err := auth.HashPassword(req.HashedPassword)
+	if err != nil {
+		log.Printf("cannot hash password: %v", err)
+		http.Error(w, "Internal server error processing request", http.StatusInternalServerError)
+		return
+	}
+
+	params := database.CreateUserParams{
+		Email:          req.Email,
+		HashedPassword: hashedPassword,
+	}
+
+	user, err := cfg.db.CreateUser(r.Context(), params)
 	if err != nil {
 		log.Printf("cannot create user: %v", err)
-		http.Error(w, "Failed to create user", http.StatusInternalServerError)
+		http.Error(w, "Internal server error creating user", http.StatusInternalServerError)
 		return
 	}
 
