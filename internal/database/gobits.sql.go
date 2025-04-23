@@ -40,3 +40,37 @@ func (q *Queries) CreateGobit(ctx context.Context, arg CreateGobitParams) (Gobit
 	)
 	return i, err
 }
+
+const getAllGobits = `-- name: GetAllGobits :many
+SELECT id, created_at, updated_at, body, user_id FROM gobits
+ORDER BY created_at ASC
+`
+
+func (q *Queries) GetAllGobits(ctx context.Context) ([]Gobit, error) {
+	rows, err := q.db.QueryContext(ctx, getAllGobits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Gobit
+	for rows.Next() {
+		var i Gobit
+		if err := rows.Scan(
+			&i.ID,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Body,
+			&i.UserID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

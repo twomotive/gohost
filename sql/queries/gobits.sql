@@ -8,3 +8,8 @@ VALUES (
     $2
 )
 RETURNING *;
+
+
+-- name: GetAllGobits :many
+SELECT * FROM gobits
+ORDER BY created_at ASC;
