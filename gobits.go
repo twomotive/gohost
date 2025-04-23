@@ -23,7 +23,7 @@ type createdGobit struct {
 	UserID    uuid.UUID `json:"user_id"`
 }
 
-func (cfg *apiConfig) handleGoBits(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createGoBits(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return

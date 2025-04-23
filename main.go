@@ -62,9 +62,11 @@ func main() {
 	mux.HandleFunc("POST /api/validate", handleValidate)
 
 	// Add users api endpoint to create users
-	mux.HandleFunc("POST /api/users", apiCfg.handleUsers)
+	mux.HandleFunc("POST /api/users", apiCfg.createUsers)
 
-	mux.HandleFunc("POST /api/gobits", apiCfg.handleGoBits)
+	mux.HandleFunc("POST /api/gobits", apiCfg.createGoBits)
+
+	mux.HandleFunc("GET /api/gobits", apiCfg.getAllGoBits)
 
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {

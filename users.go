@@ -20,7 +20,7 @@ type createdUser struct {
 	Email     string    `json:"email"`
 }
 
-func (cfg *apiConfig) handleUsers(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
