@@ -12,8 +12,8 @@ import (
 )
 
 type userRequest struct {
-	Email          string `json:"email"`
-	HashedPassword string `json:"hashed_password"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type createdUser struct {
@@ -47,8 +47,13 @@ func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Email is required", http.StatusBadRequest)
 		return
 	}
+	// Add check for empty password
+	if req.Password == "" {
+		http.Error(w, "Password is required", http.StatusBadRequest)
+		return
+	}
 
-	hashedPassword, err := auth.HashPassword(req.HashedPassword)
+	hashedPassword, err := auth.HashPassword(req.Password)
 	if err != nil {
 		log.Printf("cannot hash password: %v", err)
 		http.Error(w, "Internal server error processing request", http.StatusInternalServerError)
@@ -57,7 +62,7 @@ func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 
 	params := database.CreateUserParams{
 		Email:          req.Email,
-		HashedPassword: hashedPassword,
+		HashedPassword: hashedPassword, // Store the correctly hashed password
 	}
 
 	user, err := cfg.db.CreateUser(r.Context(), params)

@@ -64,6 +64,8 @@ func main() {
 	// Add users api endpoint to create users
 	mux.HandleFunc("POST /api/users", apiCfg.createUsers)
 
+	mux.HandleFunc("POST /api/login", apiCfg.userLogin)
+
 	mux.HandleFunc("POST /api/gobits", apiCfg.createGoBits)
 
 	mux.HandleFunc("GET /api/gobits", apiCfg.getAllGoBits)
