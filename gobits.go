@@ -5,11 +5,12 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"sort" // Import the sort package
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/twomotive/gohost/internal/auth"
-	"github.com/twomotive/gohost/internal/database"
+	"github.com/twomotive/gohost/internal/database" // Ensure database import is present
 )
 
 type gobitRequest struct {
@@ -104,6 +105,7 @@ func (cfg *apiConfig) getAllGoBits(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authorIDStr := r.URL.Query().Get("author_id")
+	sortParam := r.URL.Query().Get("sort") // Get the sort parameter
 	var gobits []database.Gobit
 	var err error
 
@@ -126,6 +128,15 @@ func (cfg *apiConfig) getAllGoBits(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to get gobits", http.StatusInternalServerError)
 		return
 	}
+
+	// Sort the gobits based on the sort parameter if it's "desc"
+	if sortParam == "desc" {
+		sort.Slice(gobits, func(i, j int) bool {
+			// For descending order, check if i's time is after j's time
+			return gobits[i].CreatedAt.After(gobits[j].CreatedAt)
+		})
+	}
+	// Default is ascending, which is already handled by the SQL query.
 
 	responseGobits := make([]createdGobit, len(gobits))
 	for i, dbGobit := range gobits {
