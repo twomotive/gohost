@@ -15,6 +15,11 @@ SELECT * FROM gobits
 ORDER BY created_at ASC;
 
 
+-- name: GetGobitsByAuthor :many
+SELECT * FROM gobits
+WHERE user_id = $1
+ORDER BY created_at ASC;
+
 
 -- name: GetGobit :one
 SELECT * FROM gobits WHERE id = $1;
