@@ -103,7 +103,24 @@ func (cfg *apiConfig) getAllGoBits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	gobits, err := cfg.db.GetAllGobits(r.Context())
+	authorIDStr := r.URL.Query().Get("author_id")
+	var gobits []database.Gobit
+	var err error
+
+	if authorIDStr != "" {
+		// If author_id is provided, parse it and get gobits by author
+		authorID, parseErr := uuid.Parse(authorIDStr)
+		if parseErr != nil {
+			log.Printf("Invalid author_id format: %v", parseErr)
+			http.Error(w, "Invalid author_id format", http.StatusBadRequest)
+			return
+		}
+		gobits, err = cfg.db.GetGobitsByAuthor(r.Context(), authorID)
+	} else {
+		// If author_id is not provided, get all gobits
+		gobits, err = cfg.db.GetAllGobits(r.Context())
+	}
+
 	if err != nil {
 		log.Printf("cannot get gobits: %v", err)
 		http.Error(w, "Failed to get gobits", http.StatusInternalServerError)
