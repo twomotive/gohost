@@ -17,6 +17,7 @@ type apiConfig struct {
 	fileServerHits atomic.Int32
 	db             *database.Queries
 	jwtSecret      string
+	stripKey       string // Add stripKey field
 }
 
 func main() {
@@ -31,6 +32,11 @@ func main() {
 		log.Fatal("JWT_SECRET must be set!!")
 	}
 
+	stripKey := os.Getenv("STRIP_KEY") // Load STRIP_KEY
+	if stripKey == "" {
+		log.Fatal("STRIP_KEY must be set!!")
+	}
+
 	db, err := sql.Open("postgres", dbURL)
 	if err != nil {
 		log.Fatalf("Error opening database: %s", err)
@@ -42,6 +48,7 @@ func main() {
 		fileServerHits: atomic.Int32{},
 		db:             dbQueries,
 		jwtSecret:      jwtSecret,
+		stripKey:       stripKey, // Store stripKey in config
 	}
 
 	mux := http.NewServeMux()

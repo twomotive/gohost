@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/twomotive/gohost/internal/auth" // Import auth package
 )
 
 type stripWebhookRequest struct {
@@ -22,13 +23,28 @@ func (cfg *apiConfig) handleStripWebhook(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
+	// --- API Key Verification Start ---
+	apiKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		log.Printf("Error getting API key from webhook request: %v", err)
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	if apiKey != cfg.stripKey {
+		log.Printf("Invalid API key received for webhook: %s", apiKey)
+		http.Error(w, "Unauthorized: Invalid API key", http.StatusUnauthorized)
+		return
+	}
+	// --- API Key Verification End ---
+
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
 		return
 	}
 
 	var req stripWebhookRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Printf("JSON webhook decode error: %v", err)
 		http.Error(w, "Invalid request body: expected JSON format", http.StatusBadRequest)
