@@ -18,3 +18,7 @@ ORDER BY created_at ASC;
 
 -- name: GetGobit :one
 SELECT * FROM gobits WHERE id = $1;
+
+-- name: DeleteGobit :exec
+DELETE FROM gobits
+WHERE id = $1 AND user_id = $2;

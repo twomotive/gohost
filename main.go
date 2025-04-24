@@ -87,6 +87,8 @@ func main() {
 
 	mux.HandleFunc("GET /api/gobits/{gobitID}", apiCfg.getGoBitByID)
 
+	mux.HandleFunc("DELETE /api/gobits/{gobitID}", apiCfg.deleteGobit)
+
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
 		fmt.Printf("Server error: %v\n", err)

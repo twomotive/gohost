@@ -183,3 +183,72 @@ func (cfg *apiConfig) getGoBitByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write(data)
 }
+
+func (cfg *apiConfig) deleteGobit(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodDelete {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	// --- Authentication Start ---
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error getting bearer token for delete: %v", err)
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
+	if err != nil {
+		log.Printf("Error validating JWT for delete: %v", err)
+		http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+		return
+	}
+	// --- Authentication End ---
+
+	// Extract gobitID from the URL path parameter
+	gobitIDStr := r.PathValue("gobitID")
+	if gobitIDStr == "" {
+		http.Error(w, "gobit ID is required", http.StatusBadRequest)
+		return
+	}
+
+	gobitID, err := uuid.Parse(gobitIDStr)
+	if err != nil {
+		http.Error(w, "Invalid gobit ID format", http.StatusBadRequest)
+		return
+	}
+
+	// First, get the gobit to check ownership
+	dbGobit, err := cfg.db.GetGobit(r.Context(), gobitID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "gobit not found", http.StatusNotFound)
+		} else {
+			log.Printf("Error getting gobit %s for deletion check: %v", gobitID, err)
+			http.Error(w, "Failed to get gobit", http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// Check if the authenticated user is the author
+	if dbGobit.UserID != userID {
+		log.Printf("User %s attempted to delete gobit %s owned by user %s", userID, gobitID, dbGobit.UserID)
+		http.Error(w, "Forbidden: You do not own this gobit", http.StatusForbidden)
+		return
+	}
+
+	// User is the author, proceed with deletion
+	err = cfg.db.DeleteGobit(r.Context(), database.DeleteGobitParams{
+		ID:     gobitID,
+		UserID: userID,
+	})
+	if err != nil {
+
+		log.Printf("Error deleting gobit %s by user %s: %v", gobitID, userID, err)
+		http.Error(w, "Failed to delete gobit", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent) // 204 No Content for successful deletion
+}
