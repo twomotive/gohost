@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/twomotive/gohost/internal/auth"
 	"github.com/twomotive/gohost/internal/database"
 )
 
@@ -30,13 +31,29 @@ func (cfg *apiConfig) createGoBits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// --- Authentication Start ---
+	tokenString, err := auth.GetBearerToken(r.Header)
+	if err != nil {
+		log.Printf("Error getting bearer token: %v", err)
+		http.Error(w, "Unauthorized: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	userID, err := auth.ValidateJWT(tokenString, cfg.jwtSecret)
+	if err != nil {
+		log.Printf("Error validating JWT: %v", err)
+		http.Error(w, "Unauthorized: Invalid token", http.StatusUnauthorized)
+		return
+	}
+	// --- Authentication End ---
+
 	if r.Header.Get("Content-Type") != "application/json" {
 		http.Error(w, "Content-Type must be application/json", http.StatusUnsupportedMediaType)
 		return
 	}
 
 	var req gobitRequest
-	err := json.NewDecoder(r.Body).Decode(&req)
+	err = json.NewDecoder(r.Body).Decode(&req)
 	if err != nil {
 		log.Printf("JSON gobit decode error: %v", err)
 		http.Error(w, "Invalid JSON format", http.StatusBadRequest)
@@ -48,13 +65,9 @@ func (cfg *apiConfig) createGoBits(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.UserID == uuid.Nil {
-		http.Error(w, "Invalid UserID", http.StatusBadRequest)
-		return
-	}
 	params := database.CreateGobitParams{
 		Body:   req.Body,
-		UserID: req.UserID,
+		UserID: userID,
 	}
 
 	gobit, err := cfg.db.CreateGobit(r.Context(), params)
@@ -75,6 +88,7 @@ func (cfg *apiConfig) createGoBits(w http.ResponseWriter, r *http.Request) {
 	data, err := json.Marshal(responseGobit)
 	if err != nil {
 		log.Printf("Error marshalling gobit response: %v", err)
+		http.Error(w, "Failed to marshal response", http.StatusInternalServerError)
 		return
 	}
 
