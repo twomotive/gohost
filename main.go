@@ -89,8 +89,10 @@ func main() {
 
 	mux.HandleFunc("DELETE /api/gobits/{gobitID}", apiCfg.deleteGobit)
 
+	mux.HandleFunc("POST /api/strip/webhooks", apiCfg.handleStripWebhook)
+
 	fmt.Println("Server starting on http://localhost:8080")
 	if err := server.ListenAndServe(); err != nil {
-		fmt.Printf("Server error: %v\n", err)
+		fmt.Printf("Server error: %v\\n", err)
 	}
 }

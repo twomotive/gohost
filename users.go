@@ -17,10 +17,11 @@ type userRequest struct {
 }
 
 type createdUser struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
+	ID          uuid.UUID `json:"id"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Email       string    `json:"email"`
+	IsGohostRed bool      `json:"is_gohost_red"`
 }
 
 func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
@@ -73,10 +74,11 @@ func (cfg *apiConfig) createUsers(w http.ResponseWriter, r *http.Request) {
 	}
 
 	responseUser := createdUser{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsGohostRed: user.IsGohostRed.Valid && user.IsGohostRed.Bool, // Handle sql.NullBool
 	}
 
 	data, err := json.Marshal(responseUser)
@@ -158,10 +160,11 @@ func (cfg *apiConfig) updateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Respond with the updated user data (excluding password)
 	responseUser := createdUser{ // Re-use createdUser struct for response
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
+		ID:          user.ID,
+		CreatedAt:   user.CreatedAt,
+		UpdatedAt:   user.UpdatedAt,
+		Email:       user.Email,
+		IsGohostRed: user.IsGohostRed.Valid && user.IsGohostRed.Bool, // Handle sql.NullBool
 	}
 
 	data, err := json.Marshal(responseUser)
