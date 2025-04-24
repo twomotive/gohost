@@ -73,6 +73,12 @@ func main() {
 
 	mux.HandleFunc("POST /api/login", apiCfg.userLogin)
 
+	// Add refresh token endpoint
+	mux.HandleFunc("POST /api/refresh", apiCfg.handleRefresh)
+
+	// Add revoke token endpoint
+	mux.HandleFunc("POST /api/revoke", apiCfg.handleRevoke)
+
 	mux.HandleFunc("POST /api/gobits", apiCfg.createGoBits)
 
 	mux.HandleFunc("GET /api/gobits", apiCfg.getAllGoBits)

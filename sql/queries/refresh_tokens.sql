@@ -9,3 +9,17 @@ VALUES (
     NULL
 )
 RETURNING *;
+
+
+-- name: GetUserFromRefreshToken :one
+SELECT
+    rt.user_id,
+    rt.expires_at,
+    rt.revoked_at
+FROM refresh_tokens rt
+WHERE rt.token = $1;
+
+-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET revoked_at = NOW(), updated_at = NOW()
+WHERE token = $1;
