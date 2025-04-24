@@ -71,6 +71,8 @@ func main() {
 	// Add users api endpoint to create users
 	mux.HandleFunc("POST /api/users", apiCfg.createUsers)
 
+	mux.HandleFunc("PUT /api/users", apiCfg.updateUser)
+
 	mux.HandleFunc("POST /api/login", apiCfg.userLogin)
 
 	// Add refresh token endpoint
