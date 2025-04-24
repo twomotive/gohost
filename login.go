@@ -9,20 +9,21 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/twomotive/gohost/internal/auth"
+	"github.com/twomotive/gohost/internal/database"
 )
 
 type loginRequest struct {
-	Password         string `json:"password"`
-	Email            string `json:"email"`
-	ExpiresInSeconds *int   `json:"expires_in_seconds,omitempty"` // Optional field
+	Password string `json:"password"`
+	Email    string `json:"email"`
 }
 
 type loginResponse struct {
-	ID        uuid.UUID `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Email     string    `json:"email"`
-	Token     string    `json:"token"`
+	ID           uuid.UUID `json:"id"`
+	CreatedAt    time.Time `json:"created_at"`
+	UpdatedAt    time.Time `json:"updated_at"`
+	Email        string    `json:"email"`
+	Token        string    `json:"token"`
+	RefreshToken string    `json:"refresh_token"`
 }
 
 func (cfg *apiConfig) userLogin(w http.ResponseWriter, r *http.Request) {
@@ -65,31 +66,44 @@ func (cfg *apiConfig) userLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Determine token expiration
-	expiresIn := time.Hour // Default 1 hour
-	if req.ExpiresInSeconds != nil {
-		requestedSeconds := *req.ExpiresInSeconds
-		if requestedSeconds > 0 && requestedSeconds <= 3600 {
-			expiresIn = time.Duration(requestedSeconds) * time.Second
-		}
-		// If requestedSeconds > 3600, stick with the default 1 hour
-	}
+	jwtExpiresIn := time.Hour
 
 	// Generate JWT
-	tokenString, err := auth.MakeJWT(user.ID, cfg.jwtSecret, expiresIn)
+	tokenString, err := auth.MakeJWT(user.ID, cfg.jwtSecret, jwtExpiresIn)
 	if err != nil {
 		log.Printf("Error generating JWT for user %s: %v", user.Email, err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
+	// Generate Refresh Token
+	refreshTokenString, err := auth.MakeRefreshToken()
+	if err != nil {
+		log.Printf("Error generating refresh token for user %s: %v", user.Email, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	refreshTokenExpiresAt := time.Now().Add(60 * 24 * time.Hour) // 60 days expiration
+	_, err = cfg.db.CreateRefreshToken(r.Context(), database.CreateRefreshTokenParams{
+		Token:     refreshTokenString,
+		UserID:    user.ID,
+		ExpiresAt: refreshTokenExpiresAt,
+	})
+	if err != nil {
+		log.Printf("Error storing refresh token for user %s: %v", user.Email, err)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		return
+	}
+
 	// Login successful
 	response := loginResponse{
-		ID:        user.ID,
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-		Email:     user.Email,
-		Token:     tokenString,
+		ID:           user.ID,
+		CreatedAt:    user.CreatedAt,
+		UpdatedAt:    user.UpdatedAt,
+		Email:        user.Email,
+		Token:        tokenString,
+		RefreshToken: refreshTokenString,
 	}
 
 	data, err := json.Marshal(response)
